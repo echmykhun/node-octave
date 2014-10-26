@@ -1,0 +1,7 @@
+extends layout
+block content
+    form(name="octave", action="/octave", method="post")
+        input(type="text", name="input")
+        input(type="text", name="output", value=output)
+        input(type="submit", value="send")
+
