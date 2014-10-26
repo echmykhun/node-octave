@@ -1,7 +1,9 @@
 extends layout
 block content
     form(name="octave", action="/octave", method="post")
-        input(type="text", name="input")
-        input(type="text", name="output", value=output)
+        textarea(name="input" cols=50 rows=20)
+        div
+            h2 output
+            div #{output}
         input(type="submit", value="send")
 
