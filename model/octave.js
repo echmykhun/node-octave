@@ -1,39 +1,150 @@
 var fs = require('fs');
-var exec = require('shelljs').exec;
+var exec = require('child_process').exec;
 
 
 var octave = {
-    name: 'octave221',
-    output: '',
+    output: {},
+    input: {},
     sessions: {},
+    sendOutput: {},
+    functionInput: {},
+    userFunctionInput: {},
+    userFunctions: {},
+    currUserFunction: {},
     startSession: function (sessionId, outputfunc) {
 
-        var terminal = exec('octave', {silent: true}, function (code, output) {
-            outputfunc(sessionId, output);
+        var _this = this;
+
+        //var terminal = exec('octave');
+        var terminal = exec('octave', function (error, stdout, stderr) {
+
+        });
+
+
+        //horrible decision but cannot see other options to save session in case of error for now
+        //have too keep looking!! For now this piece of .... will do
+
+        terminal.stderr.on('data', function (data) {
+
+            _this.output[sessionId].push(data);
+
+            _this.input[sessionId][_this.input[sessionId].length - 1].error = true;
+
+            outputfunc(sessionId, data);
+
+            delete _this.sessions[sessionId];
+
+            _this.startSession(sessionId, outputfunc);
+            _this.sendOutput[sessionId] = false;
+
+            for (var i = 0; i < _this.input[sessionId].length - 1; i++) {
+                if (!_this.input[sessionId][i].error) {
+                    _this.sessions[sessionId].console.stdin.write(_this.input[sessionId][i].data + " \n");
+                }
+            }
+
         });
 
         terminal.stdout.on('data', function (data) {
-            outputfunc(sessionId, data);
+            if (_this.sendOutput[sessionId]) {
+                _this.output[sessionId].push(data);
+                outputfunc(sessionId, data);
+            }
+
         });
 
-        this.sessions[sessionId] = {
+        _this.sessions[sessionId] = {
             console: terminal
         };
 
-    },
-    inputData: function(sessionId, data){
-        this.sessions[sessionId].console.stdin.write(data + " \n");
-    },
-    endSession: function(sessionId){
-        this.sessions[sessionId].console.stdin.end();
-    }
+        _this.output[sessionId] = _this.output[sessionId] || [];
+        _this.input[sessionId] = _this.input[sessionId] || [];
+        _this.sendOutput[sessionId] = _this.sendOutput[sessionId] || true;
+        _this.userFunctionInput[sessionId] = _this.userFunctionInput[sessionId] || [];
+        _this.userFunctions[sessionId] = _this.userFunctions[sessionId] || [];
+        _this.currUserFunction[sessionId] = _this.currUserFunction[sessionId] || '';
 
+    },
+
+    //ФУУНКЦИИИ!!!!!!
+    inputData: function (sessionId, input) {
+        this.sendOutput[sessionId] = true;
+        var sessId = sessionId.replace('-', '_');
+
+        if(/^function\s/.test(input)){
+            this.functionInput[sessionId] = true;
+
+
+
+            var funcName = input.replace(/^function\s/, '').split('=')[1].split('(')[0].trim();
+
+            console.log(funcName);
+
+            var pattern = funcName + "\\(";
+            input = input.replace(RegExp(pattern), sessId + "_" + funcName + "(");
+            this.userFunctionInput[sessionId].push(input);
+            this.userFunctions[sessionId].push(funcName);
+            this.currUserFunction[sessionId] = funcName;
+
+            return
+
+        } else if(/^endfunction\s*/.test(input)){
+
+
+            this.userFunctionInput[sessionId].push(input);
+
+            fs.writeFile(sessId + "_ " + this.currUserFunction[sessionId] + '.m', this.userFunctionInput[sessionId].join("\n"), function(err) {
+                if(err) {
+                    console.log(err);
+                }
+            });
+
+            //source "quaderror.m"
+
+            this.sessions[sessionId].console.stdin.write('source"' + sessId + "_ " + this.currUserFunction[sessionId] + '.m' + '" \n');
+
+            this.functionInput[sessionId] = false;
+            this.userFunctionInput[sessionId] = [];
+            this.currUserFunction[sessionId] = '';
+
+            return
+        }
+
+
+        if(this.userFunctions[sessionId]){
+            for(var i in this.userFunctions[sessionId]){
+                var func = this.userFunctions[sessionId][i];
+                input = input.replace(RegExp(func), sessId + "_" + func);
+            }
+        }
+
+
+        if (!this.functionInput[sessionId]) {
+            this.userFunctionInput[sessionId] = [];
+            this.input[sessionId].push({error: false, data: input});
+            this.sessions[sessionId].console.stdin.write(input + " \n");
+        }else{
+            this.userFunctionInput[sessionId].push(input);
+        }
+
+
+    },
+    endSession: function (sessionId) {
+        this.sessions[sessionId].console.stdin.end();
+
+        delete this.output[sessionId];
+        delete this.input[sessionId];
+        delete this.sessions[sessionId];
+        delete this.sendOutput[sessionId];
+        delete this.functionInput[sessionId];
+        delete this.userFunctionInput[sessionId];
+
+    }
 
 
 };
 
 module.exports = octave;
-
 
 
 //execute: function (filename) {
