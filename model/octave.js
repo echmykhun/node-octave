@@ -14,6 +14,7 @@ var octave = {
     startSession: function (sessionId, outputfunc) {
 
         var _this = this;
+        var sessId = sessionId.replace('-', '');
 
         //var terminal = exec('octave');
         var terminal = exec('octave', function (error, stdout, stderr) {
@@ -111,7 +112,7 @@ var octave = {
             return
         }
 
-        input = input.replace(/\s+/g, '');
+        input = input.replace(/\s+\(/g, '(');
 
         if(this.userFunctions[sessionId]){
             for(var i in this.userFunctions[sessionId]){
