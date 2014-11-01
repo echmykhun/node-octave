@@ -8,10 +8,8 @@ router.get('/', function (req, res) {
 
 router.post('/', function (req, res) {
 
-    //octave.handle(req.body.input);
-    octave.execute('11');
 
-    res.render('octave', {input: req.body.input, output: octave.output});
+    res.render('octave', {input: req.body.input, output: octave.title});
 });
 
 module.exports = router;

@@ -7,6 +7,10 @@ window.onload = function () {
     var content = document.getElementById("content");
     var name = document.getElementById("name");
 
+    var sendPlotButton = document.getElementById("send-plot");
+    var plotT = document.getElementById("graph-t-input");
+    var plotX = document.getElementById("graph-x-input");
+
     socket.on('message', function (data) {
         if (data.message) {
             messages.push(data);
@@ -20,7 +24,7 @@ window.onload = function () {
     });
 
     sendButton.onclick = function () {
-        send()
+        send();
     };
 
     field.onkeydown = function(e){
@@ -39,5 +43,13 @@ window.onload = function () {
         socket.emit('send', {message: text});
         field.value = '';
     }
+
+    sendPlotButton.onclick = function () {
+
+        var text = 'plot(' + plotT.value + ',' + '); \n';
+        text += 'print -deps ' + socket.id + '.png';
+        socket.emit('send', {message: text, plot: true});
+
+    };
 
 };

@@ -3,6 +3,7 @@ var exec = require('child_process').exec;
 
 
 var octave = {
+    title: 'GNU OCTAVE ONLINE',
     output: {},
     input: {},
     sessions: {},
@@ -11,6 +12,7 @@ var octave = {
     userFunctionInput: {},
     userFunctions: {},
     currUserFunction: {},
+    bachChannel: {},
     startSession: function (sessionId, outputfunc) {
 
         var _this = this;
@@ -20,9 +22,6 @@ var octave = {
         var terminal = exec('octave', function (error, stdout, stderr) {
 
         });
-
-        //terminal.stdin.write('figure("visible","off"); \n');
-
 
         //horrible decision but cannot see other options to save session in case of error for now
         //have too keep looking!! For now this piece of .... will do
@@ -60,6 +59,7 @@ var octave = {
             console: terminal
         };
 
+        _this.bachChannel = outputfunc;
         _this.output[sessionId] = _this.output[sessionId] || [];
         _this.input[sessionId] = _this.input[sessionId] || [];
         _this.sendOutput[sessionId] = _this.sendOutput[sessionId] || true;
@@ -71,12 +71,15 @@ var octave = {
 
     inputData: function (sessionId, input) {
         this.sendOutput[sessionId] = true;
-        var sessId = sessionId.replace('-', '');
 
+        if(/print/.test(input) || /plot/.test(input)){
+            this.bachChannel(sessionId, 'use built in tool for graphics');
+            return
+        }
+
+        var sessId = sessionId.replace('-', '');
         if(/^function\s/.test(input)){
             this.functionInput[sessionId] = true;
-
-
 
             var funcName = input.replace(/^function\s/, '').split('=')[1].split('(')[0].trim();
 

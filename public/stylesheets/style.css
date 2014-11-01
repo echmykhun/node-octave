@@ -6,3 +6,26 @@ body {
 a {
   color: #00B7FF;
 }
+
+div.container {
+    display: inline-block;
+    margin: 10px 20px;
+}
+
+div.left {
+    float: left;
+}
+
+div.right {
+    float: right;
+}
+
+input{
+    margin: 5px 0px;
+}
+
+label{
+    margin: 0px 5px 0px 0px;
+}
+
+/*#img-container*/
