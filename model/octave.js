@@ -20,6 +20,8 @@ var octave = {
 
         });
 
+        //terminal.stdin.write('figure("visible","off"); \n');
+
 
         //horrible decision but cannot see other options to save session in case of error for now
         //have too keep looking!! For now this piece of .... will do
@@ -66,10 +68,9 @@ var octave = {
 
     },
 
-    //ФУУНКЦИИИ!!!!!!
     inputData: function (sessionId, input) {
         this.sendOutput[sessionId] = true;
-        var sessId = sessionId.replace('-', '_');
+        var sessId = sessionId.replace('-', '');
 
         if(/^function\s/.test(input)){
             this.functionInput[sessionId] = true;
@@ -78,10 +79,10 @@ var octave = {
 
             var funcName = input.replace(/^function\s/, '').split('=')[1].split('(')[0].trim();
 
-            console.log(funcName);
-
+            input = input.replace(/\s+/g, '');
+            input = input.replace(/^function/, 'function ');
             var pattern = funcName + "\\(";
-            input = input.replace(RegExp(pattern), sessId + "_" + funcName + "(");
+            input = input.replace(RegExp(pattern), sessId + funcName + "(");
             this.userFunctionInput[sessionId].push(input);
             this.userFunctions[sessionId].push(funcName);
             this.currUserFunction[sessionId] = funcName;
@@ -91,17 +92,17 @@ var octave = {
         } else if(/^endfunction\s*/.test(input)){
 
 
+            input = input.replace(/\s+/g, '');
             this.userFunctionInput[sessionId].push(input);
 
-            fs.writeFile(sessId + "_ " + this.currUserFunction[sessionId] + '.m', this.userFunctionInput[sessionId].join("\n"), function(err) {
+            fs.writeFile(sessId + this.currUserFunction[sessionId] + '.m', this.userFunctionInput[sessionId].join("\n"), function(err) {
                 if(err) {
                     console.log(err);
                 }
             });
 
-            //source "quaderror.m"
 
-            this.sessions[sessionId].console.stdin.write('source"' + sessId + "_ " + this.currUserFunction[sessionId] + '.m' + '" \n');
+            this.sessions[sessionId].console.stdin.write('source"' + sessId + this.currUserFunction[sessionId] + '.m' + '" \n');
 
             this.functionInput[sessionId] = false;
             this.userFunctionInput[sessionId] = [];
@@ -110,11 +111,17 @@ var octave = {
             return
         }
 
+        input = input.replace(/\s+/g, '');
 
         if(this.userFunctions[sessionId]){
             for(var i in this.userFunctions[sessionId]){
                 var func = this.userFunctions[sessionId][i];
-                input = input.replace(RegExp(func), sessId + "_" + func);
+                var pattern = func + "\\(";
+                input = input.replace(RegExp(pattern), sessId + func + '(');
+                pattern = "'" + func + "'";
+                input = input.replace(RegExp(pattern), "'" + sessId + func + "'");
+                pattern = '"' + func + '"';
+                input = input.replace(RegExp(pattern), '"' + sessId + func + '"');
             }
         }
 
