@@ -19,7 +19,6 @@ var octave = {
         var _this = this;
         var sessId = 's' + sessionId.replace('-', '');
 
-        //var terminal = exec('octave');
         var terminal = exec('octave', function (error, stdout, stderr) {
 
         });
@@ -41,6 +40,15 @@ var octave = {
 
             _this.startSession(sessionId, outputfunc);
             _this.sendOutput[sessionId] = false;
+
+            if (_this.userFunctions[sessionId]) {
+                for (var i in _this.userFunctions[sessionId]) {
+                    if (fs.existsSync(sessId + _this.userFunctions[sessionId][i] + '.m')) {
+                        var fileName = sessId + _this.userFunctions[sessionId][i] + '.m';
+                        _this.sessions[sessionId].console.stdin.write('source"' + fileName + '" \n');
+                    }
+                }
+            }
 
             for (var i = 0; i < _this.input[sessionId].length - 1; i++) {
                 if (!_this.input[sessionId][i].error) {
@@ -83,6 +91,12 @@ var octave = {
                 this.bachChannel(sessionId, 'wrong input');
                 return
             }
+
+            if (!fs.existsSync(appRoot + '/public/images/octave')) {
+                fs.mkdirSync(appRoot + '/public/images/octave');
+                fs.chmod(appRoot + '/public/images/octave', '0777');
+            }
+
             var path = appRoot + '/public/images/octave/' + sessId + this.plotExt;
             var webPath = '/images/octave/' + sessId + this.plotExt;
             this.sessions[sessionId].console.stdin.write('plot(' + inputData.t + ', ' + inputData.x + ') \n');
@@ -93,6 +107,11 @@ var octave = {
         }
 
         var input = inputData.message;
+
+        if (!input) {
+            this.bachChannel(sessionId, 'wrong input');
+        }
+
         this.sendOutput[sessionId] = true;
 
         if(/print/.test(input) || /plot/.test(input)){
@@ -165,6 +184,30 @@ var octave = {
     },
     endSession: function (sessionId) {
         this.sessions[sessionId].console.stdin.end();
+
+        var sessId = 's' + sessionId.replace('-', '');
+
+        if (fs.existsSync(appRoot + '/public/images/octave/' + sessId + this.plotExt)) {
+            fs.unlink(appRoot + '/public/images/octave/' + sessId + this.plotExt, function (err) {
+                if (err) {
+                    console.log(err);
+                }
+            });
+        }
+
+        if (this.userFunctions[sessionId]) {
+            for (var i in this.userFunctions[sessionId]) {
+
+                if (fs.existsSync(sessId + this.userFunctions[sessionId][i] + '.m')) {
+                    fs.unlink(sessId + this.userFunctions[sessionId][i] + '.m', function (err) {
+                        if (err) {
+                            console.log(err);
+                        }
+                    });
+                }
+
+            }
+        }
 
         delete this.output[sessionId];
         delete this.input[sessionId];
