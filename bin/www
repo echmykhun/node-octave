@@ -1,9 +1,39 @@
 #!/usr/bin/env node
 var debug = require('debug')('NodeOctave');
 var app = require('../app');
+var octave = require('../model/octave');
+var clients = {};
 
 app.set('port', process.env.PORT || 3000);
 
 var server = app.listen(app.get('port'), function() {
   debug('Express server listening on port ' + server.address().port);
+  console.log('Express server listening on port ' + server.address().port);
 });
+
+var socketio = require('socket.io').listen(server);
+
+socketio.sockets.on('connection', function (socket) {
+
+    clients[socket.id] = socket;
+
+    octave.startSession(socket.id, sendMessage);
+
+
+    socket.on('send', function (data) {
+        octave.inputData(socket.id, data);
+    });
+
+    socket.on('disconnect', function(data){
+        octave.endSession(socket.id);
+        delete clients[socket.id];
+    })
+
+});
+
+function sendMessage(socketId, data) {
+    if (clients[socketId]) {
+        clients[socketId].send({message: data});
+    }
+}
+

@@ -1,8 +1,35 @@
 body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+    padding: 50px;
+    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
 a {
-  color: #00B7FF;
+    color: #00B7FF;
+    margin: 5px 5px;
+}
+
+div.container {
+    display: inline-block;
+    margin: 10px 20px;
+}
+
+div.left {
+    float: left;
+}
+
+div.right {
+    float: right;
+}
+
+input {
+    margin: 5px 0px;
+}
+
+label {
+    margin: 0px 5px 0px 0px;
+}
+
+img {
+    max-height: 500px;
+    max-width: 500px;
 }

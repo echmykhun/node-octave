@@ -1,0 +1,25 @@
+extends layout
+block head
+    script(src='/javascripts/dev.js')
+    script(src='/socket.io/socket.io.js')
+block content
+    div(class='container left')
+        h2 Main octave console
+        #content(style='width: 500px; height: 300px; margin: 0 0 20px 0; border: solid 1px #999; overflow-y: scroll;')
+            .controls
+        | Input:
+        br
+        input#field(style='width:350px;')
+        input#send(type='button', value='send')
+    div(class='container left')
+        h2 Graphics tool
+        | plot(t, x)
+        br
+        label(for"graph_t_input") t:
+        input#graph-t-input()
+        br
+        label(for="graph_x_input") x:
+        input#graph-x-input()
+        input#send-plot(type='button', value='send')
+        #img-container
+            img#plot(src="/images/octave.jpg")
