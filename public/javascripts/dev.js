@@ -13,11 +13,12 @@ window.onload = function () {
 
     socket.on('message', function (data) {
         if (data.message) {
-            messages.push(data);
-            var html = '';
-            html += '<b>' + '>>' + ': </b>';
-            html += data.message + '<br />';
-            content.innerHTML += html;
+            if (!data.message.plot) {
+                output(data);
+            }else{
+                getPlot(data.message);
+            }
+
         } else {
             console.log("There is a problem:", data);
         }
@@ -34,6 +35,10 @@ window.onload = function () {
         return true;
     };
 
+    sendPlotButton.onclick = function () {
+        socket.emit('send', {t: plotT.value, x: plotX.value , plot: true});
+    };
+
     function send(){
         var text = field.value;
         var html = '';
@@ -44,12 +49,23 @@ window.onload = function () {
         field.value = '';
     }
 
-    sendPlotButton.onclick = function () {
+    function output(data) {
+        messages.push(data);
+        var html = '';
+        html += '<b>' + '>>' + ': </b>';
+        html += data.message + '<br />';
+        content.innerHTML += html;
+    }
 
-        var text = 'plot(' + plotT.value + ',' + '); \n';
-        text += 'print -deps ' + socket.id + '.png';
-        socket.emit('send', {message: text, plot: true});
-
-    };
+    function getPlot(message){
+        $('#plot').attr('src', 'images/loader.gif');
+        setTimeout(function(){
+            $('#plot').attr('src', message.file);
+        }, 10000)
+    }
 
 };
+
+//var text = 'plot(' + plotT.value + ',' + '); \n';
+//text += 'print -deps ' + socket.id + '.png';
+//socket.emit('send', {message: text, plot: true});

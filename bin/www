@@ -21,7 +21,7 @@ socketio.sockets.on('connection', function (socket) {
 
 
     socket.on('send', function (data) {
-        octave.inputData(socket.id, data.message);
+        octave.inputData(socket.id, data);
     });
 
     socket.on('disconnect', function(data){

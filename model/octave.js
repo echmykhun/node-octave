@@ -13,10 +13,11 @@ var octave = {
     userFunctions: {},
     currUserFunction: {},
     bachChannel: {},
+    plotExt: '.png',
     startSession: function (sessionId, outputfunc) {
 
         var _this = this;
-        var sessId = sessionId.replace('-', '');
+        var sessId = 's' + sessionId.replace('-', '');
 
         //var terminal = exec('octave');
         var terminal = exec('octave', function (error, stdout, stderr) {
@@ -27,6 +28,8 @@ var octave = {
         //have too keep looking!! For now this piece of .... will do
 
         terminal.stderr.on('data', function (data) {
+
+            console.log(data);
 
             _this.output[sessionId].push(data);
 
@@ -69,7 +72,27 @@ var octave = {
 
     },
 
-    inputData: function (sessionId, input) {
+    inputData: function (sessionId, inputData ) {
+
+        var sessId = 's' + sessionId.replace('-', '');
+
+        if (inputData.plot) {
+
+
+            if (!inputData.t || !inputData.x) {
+                this.bachChannel(sessionId, 'wrong input');
+                return
+            }
+            var path = appRoot + '/public/images/octave/' + sessId + this.plotExt;
+            var webPath = '/images/octave/' + sessId + this.plotExt;
+            this.sessions[sessionId].console.stdin.write('plot(' + inputData.t + ', ' + inputData.x + ') \n');
+            this.sessions[sessionId].console.stdin.write('print -dpng ' + path + ' \n');
+            this.bachChannel(sessionId, {file: webPath, plot: true});
+
+            return
+        }
+
+        var input = inputData.message;
         this.sendOutput[sessionId] = true;
 
         if(/print/.test(input) || /plot/.test(input)){
@@ -77,7 +100,6 @@ var octave = {
             return
         }
 
-        var sessId = sessionId.replace('-', '');
         if(/^function\s/.test(input)){
             this.functionInput[sessionId] = true;
 
@@ -96,17 +118,18 @@ var octave = {
         } else if(/^endfunction\s*/.test(input)){
 
 
+            var _this = this;
             input = input.replace(/\s+/g, '');
             this.userFunctionInput[sessionId].push(input);
 
-            fs.writeFile(sessId + this.currUserFunction[sessionId] + '.m', this.userFunctionInput[sessionId].join("\n"), function(err) {
+            var fileName = sessId + this.currUserFunction[sessionId] + '.m';
+            fs.writeFile(fileName, this.userFunctionInput[sessionId].join("\n"), function(err) {
                 if(err) {
                     console.log(err);
                 }
+                _this.sessions[sessionId].console.stdin.write('source"' + fileName + '" \n');
             });
 
-
-            this.sessions[sessionId].console.stdin.write('source"' + sessId + this.currUserFunction[sessionId] + '.m' + '" \n');
 
             this.functionInput[sessionId] = false;
             this.userFunctionInput[sessionId] = [];
@@ -115,7 +138,7 @@ var octave = {
             return
         }
 
-        input = input.replace(/\s+\(/g, '(');
+        input = input.replace(/\s/g, '');
 
         if(this.userFunctions[sessionId]){
             for(var i in this.userFunctions[sessionId]){
@@ -156,47 +179,3 @@ var octave = {
 };
 
 module.exports = octave;
-
-
-//execute: function (filename) {
-//
-//    //I KNOW!!!
-//    //http://stackoverflow.com/questions/8389974/how-to-run-commands-via-nodejs-child-process
-//    //do it this way
-//    console.log(0);
-//    var terminal = new exec('octave', { silent: true }, function(code, output) {
-//        console.log('Exit code:', code);
-//        console.log('Program output:', output);
-//    });
-//
-//    console.log(1);
-//    terminal.stdout.on('data', function (data) {
-//        console.log(8888);
-//        console.log('stdout: ' + data);
-//    });
-//
-//    console.log(2);
-//    terminal.on('exit', function (code) {
-//        console.log(76786);
-//        console.log('child process exited with code ' + code);
-//    });
-//
-//    console.log(3);
-//    terminal.stdin.write('2 + 3 \n');
-//    terminal.stdin.write('4 + 9 \n');
-//    console.log(4);
-//
-//    //this.output = exec('octave ' + filename, {'silent': true}).output;
-//
-//
-//},
-//handle: function(content){
-//
-//    //var now = new Date();
-//    //
-//    //var uniqueFilename = Math.floor(Math.random() * 10) + parseInt(now.getTime()).toString(36).toUpperCase();
-//    //var filename = '/tmp/' + uniqueFilename + '.m';
-//    //fs.writeFileSync(filename, content);
-//    //this.execute(filename);
-//    //fs.unlink(filename);
-//}

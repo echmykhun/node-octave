@@ -27,5 +27,7 @@ input{
 label{
     margin: 0px 5px 0px 0px;
 }
-
-/*#img-container*/
+img{
+    max-height: 500px;
+    max-width: 500px;
+}
